@@ -47,14 +47,78 @@ Sub SplitAndCopyRowsToNewSheet()
                 ' Copy the entire row to the next available output row
                 wsSource.Rows(currentRow).Copy Destination:=wsDest.Rows(outputRow)
                 
-                ' Replace column G with the individual split value, trimmed of extra spaces
+                ' Replace column G in the new sheet with the individual split value, trimmed of extra spaces
                 wsDest.Cells(outputRow, 7).Value = Trim(splitValues(i))
                 
                 ' Move to the next output row
                 outputRow = outputRow + 1
             Next i
         ElseIf wsSource.Cells(currentRow, 7).Value <> "" Then
-            ' If G has a value but no comma, copy the row as is
+            ' If G has a value but no comma, copy the row as is to the new sheet
+            wsSource.Rows(currentRow).Copy Destination:=wsDest.Rows(outputRow)
+            outputRow = outputRow + 1
+        End If
+    Next currentRow
+    
+    MsgBox "Rows have been split and copied to 'SplitResults' sheet successfully!", vbInformation
+End Sub
+Sub SplitAndCopyRowsToNewSheet()
+    Dim wsSource As Worksheet
+    Dim wsDest As Worksheet
+    Dim lastRow As Long
+    Dim currentRow As Long
+    Dim outputRow As Long
+    Dim splitValues() As String
+    Dim i As Integer
+    
+    ' Define the source sheet
+    Set wsSource = ThisWorkbook.Sheets("Scanner")
+    
+    ' Check if "SplitResults" sheet exists, if yes, delete it
+    On Error Resume Next
+    Set wsDest = ThisWorkbook.Sheets("SplitResults")
+    On Error GoTo 0
+    
+    If Not wsDest Is Nothing Then
+        Application.DisplayAlerts = False
+        wsDest.Delete
+        Application.DisplayAlerts = True
+    End If
+    
+    ' Create a new sheet for results
+    Set wsDest = ThisWorkbook.Sheets.Add
+    wsDest.Name = "SplitResults"
+    
+    ' Find the last used row in the source sheet
+    lastRow = wsSource.Cells(wsSource.Rows.Count, "G").End(xlUp).Row
+    outputRow = 1 ' Start output from the first row of the new sheet
+
+    ' Copy header row to the new sheet if it exists
+    If lastRow > 0 Then
+        wsSource.Rows(1).Copy Destination:=wsDest.Rows(1)
+        outputRow = 2 ' Start output from the second row to avoid overwriting headers
+    End If
+
+    ' Loop through each row in column G starting from the second row
+    For currentRow = 2 To lastRow
+        ' Check if column G is not empty and contains a comma
+        If wsSource.Cells(currentRow, 7).Value <> "" And InStr(wsSource.Cells(currentRow, 7).Value, ",") > 0 Then
+            ' Split the comma-separated values
+            splitValues = Split(wsSource.Cells(currentRow, 7).Value, ",")
+            
+            ' Loop through each value in the split array
+            For i = LBound(splitValues) To UBound(splitValues)
+                ' Copy the entire row to the next available output row
+                wsSource.Rows(currentRow).Copy Destination:=wsDest.Rows(outputRow)
+                
+                ' Replace column G in the new sheet with the individual split value, trimmed of extra spaces
+                wsDest.Cells(outputRow, 7).Value = Trim(splitValues(i))
+                
+                ' Move to the next output row
+                outputRow = outputRow + 1
+            Next i
+        ElseIf wsSource.Cells(currentRow, 7).Value <> "" Then
+            ' If G has a value but no comma, copy the row as is to the new sheet
             wsSource.Rows(currentRow).Copy Destination:=wsDest.Rows(outputRow)
             outputRow = outputRow + 1
         End If
